@@ -13,8 +13,9 @@ __int16 conv8to16(__int8* data)
         movd mm1, [eax]
 
         pxor mm2, mm2
-
+        pcmpgtb mm2, mm0
         punpcklbw mm0, mm2
+        pcmpgtb mm2, mm1
         punpckhbw mm1, mm2
 
         movd [ebx], mm0
