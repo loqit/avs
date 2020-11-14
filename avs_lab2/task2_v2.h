@@ -103,7 +103,6 @@ class task2_v2{
                 t.join();
             }
         }
-       // std::cout << "Join consumers" << std::endl;
         for(auto &t: cons_thr)
         {
             if(t.joinable())
@@ -126,9 +125,7 @@ public:
                 std::cout << "Producers : " << i << " Consumers : " << j << std::endl;
                 for (int s: queueSize) {
                     auto l = std::chrono::high_resolution_clock::now();
-                    //std::cout << "Enter prodCon" << std::endl;
                     prodCon(taskNum, i, j, s);
-                   // std::cout << "Out prodCon" << std::endl;
                     auto r = std::chrono::high_resolution_clock::now();
                     auto delta = std::chrono::duration<double, std::milli>(r - l);
                     std::cout << "Time: " << delta.count() << std::endl << std::endl;

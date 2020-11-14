@@ -17,7 +17,6 @@ public:
     void push(uint8_t val)
     {
         std::unique_lock<std::mutex> locker (this->m);
-      // std::lock_guard<std::mutex> locker (this->m);
         q.push(val);
         cv.notify_one();
     }
@@ -48,7 +47,6 @@ public:
     static void prodCon(int taskNum, int prods, int cons)
     {
         DynamicQueue q;
-       // std::mutex m;
         auto producer = [&](){
             for(int i = 0;i < taskNum;i++)
             {
@@ -61,10 +59,8 @@ public:
             int items = taskNum * prods / cons ;
             for(int i = 0;i < items;i++)
             {
-               // if(q.pop()) { counter++; }
                uint8_t tmp;
                q.pop(tmp);
-             // while(q.pop(tmp)){}
                counter += tmp;
             }
             return counter;
@@ -102,11 +98,6 @@ public:
             }
         }
     }
-    /*
-    int taskNum = 4 * 1024 * 1024;
-    int prodNum[] = {1, 2, 4};
-    int consNum[] = {1, 2, 4};
-     */
 };
 
 #endif //AVS_LAB2_TASK2_H

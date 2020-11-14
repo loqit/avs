@@ -23,6 +23,8 @@ public:
         while (true)
         {
             int tl = tail.load();
+            if(tl == head + size)continue;
+            if(tl != tail)continue;
             int tmp = q[tl % size];
             if(tmp != 0) continue;
             if(tail.compare_exchange_strong(tl, tl + 1))
@@ -38,16 +40,25 @@ public:
         while(true)
         {
             int hl = head.load();
-            if(head == tail) continue;
-            val = q[hl % size];
-            if(val == 0) continue;
+            if(head == tail)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                hl = head.load();
+                if(head == tail)
+                {
+                    return false;
+                }
+            }
+            int tmp = q[hl % size];
+            if(tmp == 0 || hl != head) continue;
             if(head.compare_exchange_strong(hl, hl + 1))
             {
+                val = tmp;
                 q[hl % size] = 0;
                 return true;
             }
         }
-        return false;
+        return true;
     }
 
 
@@ -100,7 +111,6 @@ class task2_v3{
                 t.join();
             }
         }
-         std::cout << "Join consumers" << std::endl;
         for(auto &t: cons_thr)
         {
             if(t.joinable())
@@ -114,7 +124,7 @@ class task2_v3{
 public:
     static void task()
     {
-        int taskNum = 1024;
+        int taskNum = 4 * 1024 ;
         int prodNum[] = {1, 2, 4};
         int consNum[] = {1, 2, 4};
         int queueSize[] = {1, 4, 16};
@@ -123,9 +133,7 @@ public:
                 std::cout << "Producers : " << i << " Consumers : " << j << std::endl;
                 for (int s: queueSize) {
                     auto l = std::chrono::high_resolution_clock::now();
-                    //std::cout << "Enter prodCon" << std::endl;
                     prodCon(taskNum, i, j, s);
-                    // std::cout << "Out prodCon" << std::endl;
                     auto r = std::chrono::high_resolution_clock::now();
                     auto delta = std::chrono::duration<double, std::milli>(r - l);
                     std::cout << "Time: " << delta.count() << std::endl << std::endl;
