@@ -10,17 +10,16 @@ class DynamicQueue{
 private:
 
     std::mutex m;
-    std::queue<uint8_t> q;
-    std::condition_variable cv;
+    std::queue<int> q;
 public:
 
-    void push(uint8_t val)
+    void push(int val)
     {
-        std::unique_lock<std::mutex> locker (this->m);
+        m.lock();
         q.push(val);
-        cv.notify_one();
+        m.unlock();
     }
-    bool pop(uint8_t& val)
+    bool pop(int& val)
     {
         m.lock();
         if(q.empty())
@@ -47,40 +46,53 @@ public:
     static void prodCon(int taskNum, int prods, int cons)
     {
         DynamicQueue q;
+        std::atomic<int> counter{0};
         auto producer = [&](){
             for(int i = 0;i < taskNum;i++)
             {
                 q.push(1);
             }
-            return 0;
+          // return 0;
         };
         auto consumer = [&](){
-            int counter = 0;
             int items = taskNum * prods / cons ;
+            int tmp;
             for(int i = 0;i < items;i++)
             {
-               uint8_t tmp;
                q.pop(tmp);
                counter += tmp;
             }
-            return counter;
+           // return counter;
         };
-        std::vector<std::future<int>> threads;
-        threads.reserve(prods + cons);
+        std::vector<std::thread> prod_thr;
+        std::vector<std::thread> cons_thr;
+        prod_thr.reserve(prods);
+        cons_thr.reserve(cons);
         for(int i = 0;i < prods;i++)
         {
-            threads.emplace_back(std::async(producer));
+            std::thread thr(producer);
+            prod_thr.push_back(move(thr));
         }
         for(int i = 0;i < cons;i++)
         {
-            threads.emplace_back(std::async(consumer));
+            std::thread thr(consumer);
+            cons_thr.push_back(move(thr));
         }
-        int sum = 0;
-        for(int i = 0;i < prods + cons;i++)
+        for(auto &t: prod_thr)
         {
-            sum += threads[i].get();
+            if(t.joinable())
+            {
+                t.join();
+            }
         }
-        std::cout << "Cons " << cons << " Prods " << prods << " sum " << sum << " | " << prods * taskNum << std::endl;
+        for(auto &t: cons_thr)
+        {
+            if(t.joinable())
+            {
+                t.join();
+            }
+        }
+        std::cout << "Cons " << cons << " Prods " << prods << " sum " << counter << " | " << prods * taskNum << std::endl;
     }
 
     static void task()

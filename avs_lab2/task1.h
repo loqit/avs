@@ -37,7 +37,8 @@ public:
             auto l = std::chrono::high_resolution_clock::now();
             for(int j = 0;j < i;j++)
             {
-                threads.emplace_back(func, std::ref(v), std::ref(numTasks), std::ref(index));
+                std::thread thr(func, std::ref(v), std::ref(numTasks), std::ref(index));
+                threads.push_back(move(thr));
             }
             for(auto &t: threads)
             {
@@ -77,7 +78,8 @@ public:
             threads.reserve(j);
             for(int q = 0;q < j; q++)
             {
-                threads.emplace_back(func, std::ref(v),std::ref(numTasks), std::ref(i));
+                std::thread thr(func, std::ref(v),std::ref(numTasks), std::ref(i));
+                threads.push_back(move(thr));
             }
             for(auto &t: threads)
             {

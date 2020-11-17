@@ -19,7 +19,7 @@
 int main() {
     //task1::mutex_counter();
     //task1::atomic_counter();
-   // task2::task();
+    task2::task();
    // task2_v2::task();
    //task2_v3::task();
     return 0;
