@@ -23,8 +23,8 @@ public:
                 v[index]++;
                 m.lock();
                 index++;
-                std::this_thread::sleep_for(std::chrono::nanoseconds(10));
                 m.unlock();
+                std::this_thread::sleep_for(std::chrono::nanoseconds(10));
 
             }
         };
@@ -46,6 +46,11 @@ public:
             }
             auto r = std::chrono::high_resolution_clock::now();
             auto time = std::chrono::duration<double, std::milli>(r - l).count();
+            for(auto d: v)
+            {
+                std::cout << d << " ";
+            }
+            std::cout << std::endl;
             std::cout << i << " threads in " << time << std::endl;
             m.lock();
             index = 0;
@@ -54,7 +59,7 @@ public:
     }
     static void atomic_counter()
     {
-        int numTasks = 1024 * 1024;
+        int numTasks = 4 * 1024 * 1024;
         int numThreads[] = {4, 8, 16, 32};
         std::vector<int> v;
         std::atomic<int> i = {0};
@@ -87,6 +92,11 @@ public:
             }
             auto r = std::chrono::high_resolution_clock::now();
             auto delta = std::chrono::duration<double, std::milli>(r - l).count();
+            for(auto d: v)
+            {
+                std::cout << d << " ";
+            }
+            std::cout << std::endl;
             std::cout << j << " threads in " << delta << " using atomic" <<std::endl;
             i = {0};
         }
