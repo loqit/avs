@@ -31,12 +31,10 @@ void producer(Q& q)
 template<typename Q>
 void consumer(int prods, int cons, Q& q, std::atomic<int>& counter)
 {
-    int items = taskNum * prods / cons;
     int tmp;
-    for(int i = 0;i < items ;i++)
+    while (counter.load() < taskNum * prods)
     {
-        while(!q.pop(tmp)) {}
-        counter += tmp;
+       if(q.pop(tmp)) { counter += tmp; }
     }
 }
 template<typename Q>
@@ -49,17 +47,19 @@ void prodCon(int prods, int cons, Q& q)
     prod_thr.reserve(prods);
     cons_thr.reserve(cons);
 
-    for(int i = 0;i < prods;i++)
-    {
-        std::thread thr(producer<Q>, std::ref(q));
-        prod_thr.push_back(move(thr));
-    }
 
     for(int i = 0;i < cons;i++)
     {
         std::thread thr(consumer<Q>, prods, cons, std::ref(q), std::ref(counter));
         cons_thr.push_back(move(thr));
     }
+
+    for(int i = 0;i < prods;i++)
+    {
+        std::thread thr(producer<Q>, std::ref(q));
+        prod_thr.push_back(move(thr));
+    }
+
     for(auto &t: prod_thr)
     {
         if(t.joinable())

@@ -4,51 +4,59 @@
 #include <ctime>
 #include <random>
 
+
+
 double fRand(double fMin, double fMax)
 {
     double f = (double)rand() / RAND_MAX;
     return fMin + f * (fMax - fMin);
 }
-
-void matrixVector(int n, int m, const double* arr, bool flag)
+void matrixVectorV2(const std::vector<std::vector<double>>& a, const std::vector<double>& v, std::vector<double>& res)
 {
-    //std::cout << "Enter vector" << '\n';
-    auto * v = new double [m];
-    //#pragma omp for
-    for (int i = 0;i < m;i++)
-    {
-        v[i] = fRand(1,100);
-    }
+    size_t n = a.size(), m = a[0].size();
 
-
-    double res[n];
-#pragma omp parallel // shared(n, m, arr, v) reduction(+:res)
+    for (int i = 0;i < n;i++)
     {
-        /*
-        int nthreads = omp_get_num_threads();
-    int threadid = omp_get_thread_num();
-    int items_per_thread = m / nthreads;
-    int lb = threadid * items_per_thread;
-    int ub = (threadid == nthreads - 1) ? (m - 1) : (lb + items_per_thread - 1);
-*/
-#pragma omp for
-        for (int i = 0;i < n;i++)
+
+        for (int j = 0;j < m;j++)
         {
-            res[i] = 0;
-            for (int j = 0;j < m;j++)
-            {
-                int x = i, y = j;
-                if (flag) { std::swap(x, y); }
-#pragma omp atomic
-                res[i] += arr[x * m + y] * v[j];
-            }
+            res[i] += a[i][j] * v[j];
         }
+
     }
 
+/*
+    std::string s = flag ? " " : "\n";
+    for (int i = 0; i < n; ++i) {
+        std::cout << res[i] << s;
+    }*/
+}
+
+void matrixVector(const std::vector<std::vector<double>>& a, const std::vector<double>& v, std::vector<double>& res)
+{
+    size_t n = a.size(), m = a[0].size();
+    // double tmp = 0;
+    int i, j;
+#pragma omp parallel for private(i, j) schedule(static)
+
+    for (i = 0;i < n;i++)
+    {
+        double tmp = 0;
+        for (j = 0;j < m;j++)
+        {
+            tmp += a[i][j] * v[j];
+        }
+
+        res[i] = tmp;
+
+    }
+
+/*
     std::string s = flag ? " " : "\n";
     for (int i = 0; i < n; ++i) {
         std::cout << res[i] << s;
     }
+    */
 }
 
 
@@ -56,34 +64,43 @@ int main() {
     int n, m;
     std::cout << "Enter matrix size:";
     std::cin >> n >> m;
-    double a[n][m];
+    std::vector<std::vector<double>> a(n, std::vector<double>(m));
+    std::vector<double> v(m), res(n);
 
+    srand(time(NULL));
 
-
-#pragma omp for
+//#pragma omp parallel for schedule(static)
     for (int i = 0;i < n ;i++)
     {
         for (int j = 0;j < m;j++)
         {
             a[i][j] = fRand(1,100);
-            // std::cout << a[i][j] << " " ;
+
         }
-        //std::cout << '\n';
     }
 
+    for (int i = 0;i < m;i++)
+    {
+        v[i] = fRand(1,100);
+    }
 
-
-    auto begin = std::chrono::high_resolution_clock::now();
-    matrixVector(n, m, &a[0][0], false);
-    auto end = std::chrono::high_resolution_clock::now();
+    auto begin = std::chrono::steady_clock::now();
+    matrixVector(a, v, res);
+    auto end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration<double, std::milli>(end - begin).count();
-    std::cout << "Time : " << time << std::endl;
-    std::cout << '\n';
+    std::cout << '\n' << "Time : " << time << std::endl;
+    auto x = v;
+    std::cout << '\n' << "Without OpenMP"  << '\n' << std::endl;
 
-    begin = std::chrono::high_resolution_clock::now();
-    matrixVector(n, m, &a[0][0], true);
-    end = std::chrono::high_resolution_clock::now();
+    begin = std::chrono::steady_clock::now();
+    matrixVectorV2(a, v, res);
+    end = std::chrono::steady_clock::now();
     time = std::chrono::duration<double, std::milli>(end - begin).count();
     std::cout << '\n' << "Time : " << time << std::endl;
+    auto y = v;
+    if(x == y)
+    {
+        std::cout << "true" << std::endl;
+    }
     return 0;
 }
